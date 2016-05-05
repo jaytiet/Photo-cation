@@ -6,11 +6,13 @@ import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.content.Intent;
 import android.provider.MediaStore;
+import android.widget.Toast;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -43,15 +45,21 @@ public class MainActivity extends AppCompatActivity {
     private void takePicture() {
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
-        fileUri = getFileUri(1);
+        fileUri = getFileUri(MEDIA_TYPE_IMAGE);
         cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
 
-        getFile(1);
+        getFile(MEDIA_TYPE_IMAGE);
         startActivityForResult(cameraIntent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
     }
 
     private static File getFile(int type) {
         File storageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), APP_NAME);
+
+        if (!storageDir.exists()) {
+            if (!storageDir.mkdirs()) {
+                Log.d("Photo-cation", "Failed to create directory!!!");
+            }
+        }
 
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         File mediaFile;
@@ -73,7 +81,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        //TO-DO
+        if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
+            if (resultCode == RESULT_OK) {
+                Toast.makeText(this, "Image saved!", Toast.LENGTH_LONG).show();
+            }
+            else if (resultCode == RESULT_CANCELED) {
+
+            }
+            else {
+                Toast.makeText(this, "Failed to capture image", Toast.LENGTH_LONG).show();
+            }
+        }
     }
 
     @Override
