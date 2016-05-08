@@ -14,17 +14,22 @@ import android.content.Intent;
 import android.provider.MediaStore;
 import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
+
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final int MEDIA_TYPE_IMAGE = 1;
     private static final int MEDIA_TYPE_VIDEO = 2;
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 10;
     private Uri fileUri;
     private static final String APP_NAME = "Photo-cation";
+    private GoogleApiClient mGoogleApiClient;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +45,37 @@ public class MainActivity extends AppCompatActivity {
                 takePicture();
             }
         });
+
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks((GoogleApiClient.ConnectionCallbacks) this)
+                .addOnConnectionFailedListener((GoogleApiClient.OnConnectionFailedListener) this)
+                .build();
+    }
+
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    protected void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+
     }
 
     private void takePicture() {
