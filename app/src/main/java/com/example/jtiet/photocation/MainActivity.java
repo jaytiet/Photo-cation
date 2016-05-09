@@ -1,9 +1,11 @@
 package com.example.jtiet.photocation;
 
+import android.Manifest;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -12,7 +14,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.content.Intent;
 import android.provider.MediaStore;
+import android.widget.TextView;
 import android.widget.Toast;
+import android.location.Location;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -30,6 +34,10 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     private Uri fileUri;
     private static final String APP_NAME = "Photo-cation";
     private GoogleApiClient mGoogleApiClient;
+    private Location mLastLocation;
+
+    public TextView mLongitudeTextView;
+    public TextView mLatitudeTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +45,9 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        mLongitudeTextView = (TextView) findViewById(R.id.longitude);
+        mLatitudeTextView = (TextView) findViewById(R.id.latitude);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -48,8 +59,8 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addApi(LocationServices.API)
-                .addConnectionCallbacks((GoogleApiClient.ConnectionCallbacks) this)
-                .addOnConnectionFailedListener((GoogleApiClient.OnConnectionFailedListener) this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
                 .build();
     }
 
@@ -64,8 +75,12 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     }
 
     @Override
-    public void onConnected(Bundle bundle) {
-
+    public void onConnected(Bundle connectionHint) {
+        if (checkLocationPermission() == 0) {
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            mLongitudeTextView.setText(String.valueOf(mLastLocation.getLongitude()));
+            mLatitudeTextView.setText(String.valueOf(mLastLocation.getLatitude()));
+        }
     }
 
     @Override
@@ -76,6 +91,11 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnectionFailed(ConnectionResult result) {
 
+    }
+
+    private int checkLocationPermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        return permissionCheck;
     }
 
     private void takePicture() {
