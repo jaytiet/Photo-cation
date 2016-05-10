@@ -1,8 +1,11 @@
 package com.example.jtiet.photocation;
 
 import android.Manifest;
+import android.location.Address;
+import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Debug;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -23,21 +26,32 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final int MEDIA_TYPE_IMAGE = 1;
     private static final int MEDIA_TYPE_VIDEO = 2;
     private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 10;
+
     private Uri fileUri;
+
     private static final String APP_NAME = "Photo-cation";
+    private String mAddressString;
+
     private GoogleApiClient mGoogleApiClient;
     private Location mLastLocation;
 
+    private double mLongitude;
+    private double mLatitude;
+
     public TextView mLongitudeTextView;
     public TextView mLatitudeTextView;
+    public TextView mAddressLocationTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -48,6 +62,7 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
         mLongitudeTextView = (TextView) findViewById(R.id.longitude);
         mLatitudeTextView = (TextView) findViewById(R.id.latitude);
+        mAddressLocationTextView = (TextView) findViewById(R.id.address);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         fab.setOnClickListener(new View.OnClickListener() {
@@ -78,8 +93,13 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     public void onConnected(Bundle connectionHint) {
         if (checkLocationPermission() == 0) {
             mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            mLongitudeTextView.setText(String.valueOf(mLastLocation.getLongitude()));
-            mLatitudeTextView.setText(String.valueOf(mLastLocation.getLatitude()));
+            mLongitude = mLastLocation.getLongitude();
+            mLatitude = mLastLocation.getLatitude();
+            mLongitudeTextView.setText(String.valueOf(mLongitude));
+            mLatitudeTextView.setText(String.valueOf(mLatitude));
+
+            mAddressString = getAddressFromCoords(mLatitude, mLongitude, 1);
+            mAddressLocationTextView.setText(mAddressString);
         }
     }
 
@@ -91,6 +111,22 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnectionFailed(ConnectionResult result) {
 
+    }
+
+    public String getAddressFromCoords(double latitude, double longitude, int maxResults) {
+        String address = null;
+        List<Address> addresses;
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            addresses = geocoder.getFromLocation(latitude, longitude, maxResults);
+            address = addresses.get(0).getAddressLine(1);
+            Log.d("MainActivity", address);
+        } catch (IOException e) {
+            Log.d("MainActivity", "getAddressFromCoords: Cannot reverse geocode");
+            e.printStackTrace();
+        }
+        return address;
     }
 
     private int checkLocationPermission() {
