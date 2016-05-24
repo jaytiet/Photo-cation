@@ -1,11 +1,11 @@
 package com.example.jtiet.photocation;
 
 import android.Manifest;
+import android.hardware.camera2.CameraAccessException;
 import android.location.Address;
 import android.location.Geocoder;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Debug;
 import android.os.Environment;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.content.ContextCompat;
@@ -20,6 +20,7 @@ import android.provider.MediaStore;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.location.Location;
+import android.hardware.Camera;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -111,6 +112,16 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
     @Override
     public void onConnectionFailed(ConnectionResult result) {
 
+    }
+
+    public static Camera getCameraInstance() {
+        Camera c = null;
+        try {
+            c = Camera.open();
+        } catch (Exception e) {
+
+        }
+        return c;
     }
 
     public String getAddressFromCoords(double latitude, double longitude, int maxResults) {
