@@ -114,16 +114,6 @@ public class MainActivity extends AppCompatActivity implements GoogleApiClient.C
 
     }
 
-    public static Camera getCameraInstance() {
-        Camera c = null;
-        try {
-            c = Camera.open();
-        } catch (Exception e) {
-
-        }
-        return c;
-    }
-
     public String getAddressFromCoords(double latitude, double longitude, int maxResults) {
         String address = null;
         List<Address> addresses;
