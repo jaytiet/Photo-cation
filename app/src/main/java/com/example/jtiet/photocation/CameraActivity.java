@@ -1,15 +1,24 @@
 package com.example.jtiet.photocation;
 
+import android.Manifest;
 import android.app.Activity;
 import android.hardware.Camera;
 import android.hardware.Camera.*;
+import android.location.Address;
+import android.location.Geocoder;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Environment;
+import android.support.v4.content.ContextCompat;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.FrameLayout;
 import android.widget.TextView;
+
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -17,8 +26,10 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.List;
+import java.util.Locale;
 
-public class CameraActivity extends Activity {
+public class CameraActivity extends Activity implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     private static final int MEDIA_TYPE_IMAGE = 1;
     private static final int MEDIA_TYPE_VIDEO = 2;
@@ -27,6 +38,16 @@ public class CameraActivity extends Activity {
 
     private Camera mCamera;
     private CameraPreview mPreview;
+
+    private String mAddressString;
+
+    private GoogleApiClient mGoogleApiClient;
+    private Location mLastLocation;
+
+    private double mLongitude;
+    private double mLatitude;
+
+    public TextView mAddressLocationTextView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +60,13 @@ public class CameraActivity extends Activity {
         FrameLayout preview = (FrameLayout) findViewById(R.id.camera_preview);
         preview.addView(mPreview);
 
-        //TextView location = (TextView) findViewById(R.id.location_textview);
+        mGoogleApiClient = new GoogleApiClient.Builder(this)
+                .addApi(LocationServices.API)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .build();
+
+        mAddressLocationTextView = (TextView) findViewById(R.id.location_textview);
 
         Button captureButton = (Button) findViewById(R.id.capture_button);
         captureButton.setOnClickListener(new View.OnClickListener() {
@@ -116,6 +143,59 @@ public class CameraActivity extends Activity {
     protected void onPause() {
         super.onPause();
         releaseCamera();
+    }
+
+    protected void onStart() {
+        mGoogleApiClient.connect();
+        super.onStart();
+    }
+
+    protected void onStop() {
+        mGoogleApiClient.disconnect();
+        super.onStop();
+    }
+
+    @Override
+    public void onConnectionSuspended(int cause) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(ConnectionResult result) {
+
+    }
+
+    @Override
+    public void onConnected(Bundle connectionHint) {
+        if (checkLocationPermission() == 0) {
+            mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            mLongitude = mLastLocation.getLongitude();
+            mLatitude = mLastLocation.getLatitude();
+
+            mAddressString = getAddressFromCoords(mLatitude, mLongitude, 1);
+            mAddressLocationTextView.setText(mAddressString);
+        }
+    }
+
+    public String getAddressFromCoords(double latitude, double longitude, int maxResults) {
+        String address = null;
+        List<Address> addresses;
+
+        Geocoder geocoder = new Geocoder(this, Locale.getDefault());
+        try {
+            addresses = geocoder.getFromLocation(latitude, longitude, maxResults);
+            address = addresses.get(0).getAddressLine(1);
+            Log.d("CameraActivity", address);
+        } catch (IOException e) {
+            Log.d("CameraActivity", "getAddressFromCoords: Cannot reverse geocode");
+            e.printStackTrace();
+        }
+        return address;
+    }
+
+    private int checkLocationPermission() {
+        int permissionCheck = ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION);
+        return permissionCheck;
     }
 
 }
